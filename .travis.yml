@@ -1,7 +1,11 @@
 language:
     - cpp
 
+git:
+    submodules: false
+
 before_install:
+    - git submodule update --init --remote --recursive
     - sudo apt-get update -qq
 
 install:
