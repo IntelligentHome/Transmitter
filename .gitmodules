@@ -13,3 +13,6 @@
 [submodule "Nrf24l01_driver"]
 	path = Nrf24l01_driver
 	url = git@github.com:IntelligentHome/Nrf24l01_driver.git
+[submodule "Uart_driver"]
+	path = Uart_driver
+	url = git@github.com:IntelligentHome/Uart_driver.git

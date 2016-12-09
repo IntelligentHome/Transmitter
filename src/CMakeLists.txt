@@ -10,11 +10,21 @@ set(SOURCES
     main.cpp
     )
 
+include_directories(
+    ../Nrf24l01_driver
+    ../External/include
+    )
+
 set(CMAKE_CXX_COMPILER avr-g++)
-set(CMAKE_CXX_FLAGS "-Wall -Os -mmcu=${MCU} -DF_CPU=${FCPU}")
+set(CMAKE_CXX_FLAGS "-Wall -flto -Os -mmcu=${MCU} -DF_CPU=${FCPU}")
 set(FLASH_FLAGS "-R .eeprom -R .fuse -R .lock -R .signature")
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES})
+
+target_link_libraries(
+    ${PROJECT_NAME}.elf
+    Nrf24l01_driver
+    )
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf
     POST_BUILD
