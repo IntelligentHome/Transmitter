@@ -16,3 +16,9 @@
 [submodule "Uart_driver"]
 	path = Uart_driver
 	url = git@github.com:IntelligentHome/Uart_driver.git
+[submodule "Console"]
+	path = Console
+	url = git@github.com:IntelligentHome/Console.git
+[submodule "Ds18b20"]
+	path = Ds18b20
+	url = git@github.com:IntelligentHome/Ds18b20.git

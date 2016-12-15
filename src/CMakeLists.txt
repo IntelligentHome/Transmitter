@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(Transmitter)
 set(MCU atmega8)
-set(FCPU 8000000UL)
+set(FCPU 7372800UL)
 
 set(SOURCES
     main.cpp
@@ -12,11 +12,16 @@ set(SOURCES
 
 include_directories(
     ../Nrf24l01_driver
+    ../Uart_driver
+    ../Console
+    ../OneWire_driver
+    ../Gpio_driver
+    ../Ds18b20
     ../External/include
     )
 
 set(CMAKE_CXX_COMPILER avr-g++)
-set(CMAKE_CXX_FLAGS "-Wall -flto -Os -mmcu=${MCU} -DF_CPU=${FCPU}")
+set(CMAKE_CXX_FLAGS "-std=c++0x -Wall -flto -Os -mmcu=${MCU} -DF_CPU=${FCPU}")
 set(FLASH_FLAGS "-R .eeprom -R .fuse -R .lock -R .signature")
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES})
@@ -24,6 +29,11 @@ add_executable(${PROJECT_NAME}.elf ${SOURCES})
 target_link_libraries(
     ${PROJECT_NAME}.elf
     Nrf24l01_driver
+    Uart_driver
+    Console
+    Gpio_driver
+    OneWire_driver
+    Ds18b20
     )
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf
