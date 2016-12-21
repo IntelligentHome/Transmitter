@@ -9,12 +9,23 @@
 #   include "GpioRpi.h"
 #   include "ConsoleRpi.h"
 #   include <unistd.h>
+#   include <sys/time.h>
+#   include <iostream>
+#   include <stdlib.h>
 #endif
 
 #include "OneWireDriver.h"
 #include "IWait.h"
 
 #include "Ds18b20.h"
+
+long _abs(long a) {
+
+    if (a > 0)
+        return a;
+    else
+        return -a;
+}
 
 #if defined(TARGET_PLATFORM_AVR)
 class AvrWait : public iwait::IWait {
@@ -26,22 +37,12 @@ public:
             return;
         }
 
-        if (time == 5) {
+        if (time == 4) {
             _delay_us(1);
             return;
         }
 
-        if (time == 10) {
-            _delay_us(2);
-            return;
-        }
-
-        if (time == 15) {
-            _delay_us(3);
-            return;
-        }
-
-        time = time >> 2;
+        time = time >> 1;
         for (uint16_t i = 0; i < time; i++)
             _delay_us(2);
     };
@@ -56,11 +57,22 @@ class RpiWait : public iwait::IWait {
 
 public:
     virtual void wait_us(uint16_t time) {
-        usleep(time);    
+
+        timeval start, current;
+        static int counter = 0;
+
+        gettimeofday(&start, NULL);
+
+        do
+        {
+            gettimeofday(&current, NULL);
+        } while (_abs((current.tv_usec - start.tv_usec)%1000000) < time);
+        return;
     }
 
     virtual void wait_ms(uint16_t time) {
-        usleep(time * 1000);
+        for (int i = 0; i < time; i++)
+            this->wait_us(1000);
     }
 };
 #endif
@@ -124,11 +136,13 @@ int main() {
 
     console.print("----Start----").newline();
 
+    int counter = 0;
 
     while(1) {
         wait.wait_ms(2000);
 
         temp = termo.GetTemp();
+        console.print(counter++);
         console.print("Temp=").print((int8_t)(temp.value >> 4))
             .print(".")
             .print((temp.value & 0x0F) * 6)
