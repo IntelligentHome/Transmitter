@@ -9,8 +9,8 @@ set(VERSION_MINOR "0")
 set(VERSION_PATCH "0")
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
-#set(CMAKE_CXX_COMPILER avr-g++)
-#set(CMAKE_CXX_FLAGS "-Wall -Os -mmcu=${MCU} -DF_CPU=${FCPU}")
+message (STATUS "TARGET_PLATFORM = ${TARGET_PLATFORM}")
+set (_TARGET_PLATFORM ${TARGET_PLATFORM})
 
 add_subdirectory(Nrf24l01_driver)
 add_subdirectory(Uart_driver)
