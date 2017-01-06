@@ -8,12 +8,16 @@
 #elif defined(TARGET_PLATFORM_RASPBERRYPI)
 #   include "GpioRpi.h"
 #   include "ConsoleRpi.h"
+#   include "ReadSettingsFromFile.h"
+#   include <iomanip>
+#   include <sstream>
 #   include <unistd.h>
 #   include <sys/time.h>
 #   include <iostream>
 #   include <stdlib.h>
 #endif
 
+#include <array>
 #include "OneWireDriver.h"
 #include "IWait.h"
 
@@ -77,6 +81,7 @@ public:
 };
 #endif
 
+std::array<int, 2> s = { 2, 5};
 
 int main() {
 #if defined(TARGET_PLATFORM_AVR)
@@ -84,6 +89,7 @@ int main() {
     PORTC = 0xFF;
     PINC = 0xFF;
 #endif
+    s[1] = 30;
 
 #if defined(TARGET_PLATFORM_AVR)
 #   pragma message ("Platform AVR")
@@ -96,6 +102,7 @@ int main() {
     uart_avr::UartAvr uart(uart_driver::BAUD_19200);
 #elif defined(TARGET_PLATFORM_RASPBERRYPI)
     RpiWait wait;
+    read_settings_from_file::ReadSettingsFromFile loader("/tmp/Transmitter/Settings.txt");
 #endif
 
 #if defined(TARGET_PLATFORM_AVR)
@@ -141,6 +148,7 @@ int main() {
     while(1) {
         wait.wait_ms(2000);
 
+#if defined(TARGET_PLATFORM_AVR)
         temp = termo.GetTemp();
         console.print(counter++);
         console.print("Temp=").print((int8_t)(temp.value >> 4))
@@ -155,6 +163,41 @@ int main() {
         }
 
         console.newline();
+#endif
+
+#if defined(TARGET_PLATFORM_RASPBERRYPI)
+        ds18b20::Temp rpi_temp[5] = {{ 0 }};
+        rpi_temp[0] = termo.GetTemp();
+        rpi_temp[1] = termo.GetTemp();
+        rpi_temp[2] = termo.GetTemp();
+        rpi_temp[3] = termo.GetTemp();
+        rpi_temp[4] = termo.GetTemp();
+
+        for (int i = 0; i < 5; i++)
+            for (int j = i + 1; j < 5; j++) {
+                if (rpi_temp[i].value > rpi_temp[j].value) {
+                    ds18b20::Temp tmp = rpi_temp[i];
+                    rpi_temp[i] = rpi_temp[j];
+                    rpi_temp[j] = tmp;
+                }
+            }
+
+        float t = (float)rpi_temp[2].value / 16.0;
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << t;
+//        std::cout << "temp(float) = " << t << std::endl;
+        std::string curl_string = "curl \"";
+        curl_string += loader.GetAsString(i_settings_loader::SETTING_TYPE_WEB_ADDRESS);
+        curl_string += "?host=";
+        curl_string += loader.GetAsString(i_settings_loader::SETTING_TYPE_HOST_NAME);
+        curl_string += "&value=";
+        curl_string += stream.str();
+        curl_string += "\"";
+//        std::cout << curl_string << std::endl;
+        system(curl_string.c_str());
+#endif
+
+
     }
 
     return 0;

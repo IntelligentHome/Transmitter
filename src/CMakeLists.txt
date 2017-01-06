@@ -17,6 +17,7 @@ include_directories(
     ../OneWire_driver
     ../Gpio_driver
     ../Ds18b20
+    ../SettingsLoader
     ../External/include
     )
 
@@ -57,6 +58,7 @@ elseif (${_TARGET_PLATFORM} STREQUAL "RASPBERRYPI")
         Gpio_driver
         OneWire_driver
         Ds18b20
+        SettingsLoader
         )
 
 endif()

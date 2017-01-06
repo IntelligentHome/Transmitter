@@ -22,3 +22,6 @@
 [submodule "Ds18b20"]
 	path = Ds18b20
 	url = git@github.com:IntelligentHome/Ds18b20.git
+[submodule "SettingsLoader"]
+	path = SettingsLoader
+	url = git@github.com:IntelligentHome/SettingsLoader.git
