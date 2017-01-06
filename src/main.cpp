@@ -17,7 +17,6 @@
 #   include <stdlib.h>
 #endif
 
-#include <array>
 #include "OneWireDriver.h"
 #include "IWait.h"
 
@@ -81,15 +80,12 @@ public:
 };
 #endif
 
-std::array<int, 2> s = { 2, 5};
-
 int main() {
 #if defined(TARGET_PLATFORM_AVR)
     DDRC = 0xFF;
     PORTC = 0xFF;
     PINC = 0xFF;
 #endif
-    s[1] = 30;
 
 #if defined(TARGET_PLATFORM_AVR)
 #   pragma message ("Platform AVR")
