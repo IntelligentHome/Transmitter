@@ -1,9 +1,12 @@
 #if defined(TARGET_PLATFORM_AVR)
 #   define F_CPU 7372800UL
 #   include "GpioAvrDriver.h"
+#   include "SpiAvr.h"
 #   include "UartAvr.h"
+#   include "Nrf24l01.h"
 #   include <avr/io.h>
 #   include <util/delay.h>
+#   include <avr/interrupt.h>
 #   include "ConsoleAvr.h"
 #elif defined(TARGET_PLATFORM_RASPBERRYPI)
 #   include "GpioRpi.h"
@@ -102,6 +105,13 @@ int main() {
 #endif
 
 #if defined(TARGET_PLATFORM_AVR)
+    console_avr::ConsoleAvr console(uart);
+#elif defined(TARGET_PLATFORM_RASPBERRYPI)
+    console_rpi::ConsoleRpi console;
+#endif
+
+#if defined(TARGET_PLATFORM_AVR)
+    //sei();
     gpio_avr_driver::GpioAvr one_wire_gpio(
             DDRC,
             PORTC,
@@ -109,6 +119,110 @@ int main() {
             5,
             gpio_driver::GPIO_INPUT,
             gpio_driver::GPIO_NO_PULL);
+
+    //console.print("Init one_wire_gpio").newline();
+
+    gpio_avr_driver::GpioAvr spi_gpio(
+            DDRC,
+            PORTC,
+            PINC,
+            2,
+            gpio_driver::GPIO_OUTPUT,
+            gpio_driver::GPIO_PULL_UP);
+
+    //console.print("Init spi_gpio").newline();
+
+    gpio_avr_driver::GpioAvr nrf24l01_ce(
+            DDRC,
+            PORTC,
+            PINC,
+            3,
+            gpio_driver::GPIO_OUTPUT,
+            gpio_driver::GPIO_PULL_UP);
+
+    //console.print("Init nrf24l01_ce").newline();
+
+    spi_avr::SpiAvr spi(&spi_gpio, &console);
+
+    //console.print("Init spi").newline();
+
+    nrf24l01_driver::Nrf24l01 radio(
+            &spi,
+            &nrf24l01_ce);
+
+    radio.FlushRx();
+    radio.FlushTx();
+    radio.ClearIrqFlags();
+
+    radio.StartListening();
+
+    //console.print("Init radio").newline();
+
+    nrf24_driver::NrfStatusRegister radio_status = {{ 0 }};
+
+    {
+        //TODO: Add support for command EN_RXADDR
+        uint8_t data_debug[] = { 0x22, 0x03 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        //TODO: Add support for command SETUP_AW
+        uint8_t data_debug[] = { 0x23, 0x03 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        //TODO: Add support for command REGISTER_RF_SETUO
+        uint8_t data_debug[] = { 0x26, 0x0E };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        //TODO: Add support for Dynamic payload length
+        uint8_t data_debug[] = { 0x3C, 0 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        //TODO: Add support for FEATURE
+        uint8_t data_debug[] = { 0x3D, 0 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        uint8_t data_debug[] = { 0x2B, 0x00, 0x12, 0x23, 0x24, 0x24 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        uint8_t data_debug[] = { 0x2C, 0x55 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        uint8_t data_debug[] = { 0x2D, 0x66 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        uint8_t data_debug[] = { 0x2E, 0x77 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    {
+        uint8_t data_debug[] = { 0x2F, 0x88 };
+        radio.Send(data_debug, sizeof(data_debug));
+    }
+
+    console.print("Read regs").newline();
+    {
+        uint8_t data_debug[] = { 0x00, 0x00 };
+        for (uint8_t ii = 0; ii <= 0x17; ii++) {
+            data_debug[0] = ii;
+            radio.Send(data_debug, sizeof(data_debug));
+        }
+    }
 
 #elif defined(TARGET_PLATFORM_RASPBERRYPI)
     gpio_rpi::GpioRpi one_wire_gpio(
@@ -125,11 +239,6 @@ int main() {
             one_wire,
             wait);
 
-#if defined(TARGET_PLATFORM_AVR)
-    console_avr::ConsoleAvr console(uart);
-#elif defined(TARGET_PLATFORM_RASPBERRYPI)
-    console_rpi::ConsoleRpi console;
-#endif
 
     ds18b20::Temp temp;
     temp.value = 64;
@@ -141,10 +250,34 @@ int main() {
 
     int counter = 0;
 
+    wait.wait_ms(10000);
+
     while(1) {
         wait.wait_ms(2000);
 
 #if defined(TARGET_PLATFORM_AVR)
+        radio_status = radio.GetStatus();
+        console.print("radio_status = ").print(radio_status.raw_data).newline();
+        console.print("tx_full=").print(radio_status.tx_full).newline();
+        console.print("rx_pipe_no=").print(radio_status.rx_pipe_no).newline();
+        console.print("max_rt=").print(radio_status.max_rt).newline();
+        console.print("tx_data_ready=").print(radio_status.tx_data_ready).newline();
+        console.print("rx_data_ready=").print(radio_status.rx_data_ready).newline();
+        {
+            uint8_t debug_data[] = { 0x17, 0x00 };
+            radio.Send(debug_data, sizeof(debug_data));
+        }
+
+        if (radio_status.rx_data_ready) {
+            radio.ClearIrqFlags();
+            uint8_t payload_debug[32] = { 0 };
+
+            radio.GetPayload(payload_debug, sizeof(payload_debug));
+            console.print("Payload=").newline();
+            for (int ii = 0; ii < 32; ii++)
+                console.print(payload_debug[ii]).newline();
+        }
+
         temp = termo.GetTemp();
         console.print(counter++);
         console.print("Temp=").print((int8_t)(temp.value >> 4))

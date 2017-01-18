@@ -16,6 +16,7 @@ include_directories(
     ../Console
     ../OneWire_driver
     ../Gpio_driver
+    ../Spi_driver
     ../Ds18b20
     ../SettingsLoader
     ../External/include
@@ -30,6 +31,7 @@ if (${_TARGET_PLATFORM} STREQUAL "AVR")
         Uart_driver
         Console
         Gpio_driver
+        Spi_driver
         OneWire_driver
         Ds18b20
         )
