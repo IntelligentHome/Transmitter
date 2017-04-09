@@ -150,11 +150,14 @@ int main() {
             &spi,
             &nrf24l01_ce);
 
+    radio.AddWaiter(&wait);
+
     radio.FlushRx();
     radio.FlushTx();
     radio.ClearIrqFlags();
 
     radio.StartListening();
+    radio.StopListening();
 
     //console.print("Init radio").newline();
 
@@ -253,7 +256,7 @@ int main() {
     wait.wait_ms(10000);
 
     while(1) {
-        wait.wait_ms(2000);
+        wait.wait_ms(4000);
 
 #if defined(TARGET_PLATFORM_AVR)
         radio_status = radio.GetStatus();
@@ -278,7 +281,30 @@ int main() {
                 console.print(payload_debug[ii]).newline();
         }
 
+        if (radio_status.tx_full || radio_status.max_rt) {
+            console.print("tx_full, clearIrq").newline();
+            radio.ClearIrqFlags();
+            radio.FlushTx();
+        }
+
         temp = termo.GetTemp();
+
+        radio_status = radio.GetStatus();
+
+        //Send data
+        if (radio_status.tx_full == 0 && radio_status.max_rt == 0)
+        {
+//            const uint8_t tx_payload[] = {
+//                0x41, 0x42, 0x43, 0x44, 0x45, 0x46,
+//            };
+
+            console.print("Send message").newline();
+            radio.SetPayload(temp.raw_data, sizeof(temp.raw_data));
+            radio.SendData();
+        }
+
+
+        
         console.print(counter++);
         console.print("Temp=").print((int8_t)(temp.value >> 4))
             .print(".")
