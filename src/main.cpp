@@ -86,8 +86,11 @@ public:
 int main() {
 #if defined(TARGET_PLATFORM_AVR)
     DDRC = 0xFF;
-    PORTC = 0xFF;
+    PORTC = 0x0;
     PINC = 0xFF;
+    DDRD = 0xFF;
+    PORTD = 0xFF;
+    PIND = 0xFF;
 #endif
 
 #if defined(TARGET_PLATFORM_AVR)
@@ -112,11 +115,12 @@ int main() {
 
 #if defined(TARGET_PLATFORM_AVR)
     //sei();
+
     gpio_avr_driver::GpioAvr one_wire_gpio(
-            DDRC,
-            PORTC,
-            PINC,
-            5,
+            DDRD,
+            PORTD,
+            PIND,
+            3,
             gpio_driver::GPIO_INPUT,
             gpio_driver::GPIO_NO_PULL);
 
@@ -126,7 +130,7 @@ int main() {
             DDRC,
             PORTC,
             PINC,
-            2,
+            0,
             gpio_driver::GPIO_OUTPUT,
             gpio_driver::GPIO_PULL_UP);
 
@@ -136,7 +140,7 @@ int main() {
             DDRC,
             PORTC,
             PINC,
-            3,
+            1,
             gpio_driver::GPIO_OUTPUT,
             gpio_driver::GPIO_PULL_UP);
 
